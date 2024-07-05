@@ -21,8 +21,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
 
-      - name: Sync up to CodeCommit
-        uses: youyo/sync-up-to-codecommit-action@v1.0.3
-        with:
-          repository_name: MyCodeCommitRepo
-          aws_region: ap-northeast-1
+      - name: Sync to AWS CodeCommit
+        run: |
+          #!/bin/bash
+          set -ue
+          RepositoryName="MyCodeCommitRepo"
+          AwsRegion="ap-northeast-1"
+          CodeCommitUrl="https://git-codecommit.${AwsRegion}.amazonaws.com/v1/repos/${RepositoryName}"
+          
+          git config --global --add safe.directory /github/workspace
+          git config --global credential.'https://git-codecommit.*.amazonaws.com'.helper '!aws codecommit credential-helper $@'
+          git config --global credential.UseHttpPath true
+          git remote add sync ${CodeCommitUrl}
+          git push sync --mirror
